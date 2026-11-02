@@ -1,0 +1,460 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101827">
+<title>Đồng hồ đếm ngược</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #101827;
+    --bg-gradient: radial-gradient(ellipse at top, #263b54 0%, #101827 62%);
+    --panel: rgba(27, 39, 57, 0.92);
+    --panel-border: #34445b;
+    --text: #f5f7fb;
+    --muted: #9eacc0;
+    --accent: #57d6b2;
+    --accent-text: #09231d;
+    --digit-bg: linear-gradient(145deg, #26364d, #111b2b);
+    --digit-border: #41536b;
+    --digit-color: #f8fbff;
+    --digit-glow: #57d6b277;
+    --btn-sec-bg: #35465e;
+    --btn-sec-text: #fff;
+    --select-bg: #111d2d;
+    --select-border: #52647c;
+  }
+
+  /* Theme: Light */
+  [data-theme="light"] {
+    color-scheme: light;
+    --bg: #e2e8f0;
+    --bg-gradient: radial-gradient(ellipse at top, #ffffff 0%, #cbd5e1 100%);
+    --panel: rgba(255, 255, 255, 0.95);
+    --panel-border: #cbd5e1;
+    --text: #1e293b;
+    --muted: #64748b;
+    --accent: #0d9488;
+    --accent-text: #ffffff;
+    --digit-bg: linear-gradient(145deg, #ffffff, #f1f5f9);
+    --digit-border: #cbd5e1;
+    --digit-color: #0f172a;
+    --digit-glow: #0d948833;
+    --btn-sec-bg: #94a3b8;
+    --btn-sec-text: #ffffff;
+    --select-bg: #f8fafc;
+    --select-border: #94a3b8;
+  }
+
+  /* Theme: Cyberpunk */
+  [data-theme="cyberpunk"] {
+    color-scheme: dark;
+    --bg: #090014;
+    --bg-gradient: radial-gradient(ellipse at top, #2b0040 0%, #090014 80%);
+    --panel: rgba(20, 5, 35, 0.92);
+    --panel-border: #ff0055;
+    --text: #00ffff;
+    --muted: #ff77aa;
+    --accent: #ff0055;
+    --accent-text: #ffffff;
+    --digit-bg: linear-gradient(145deg, #2a0038, #10001a);
+    --digit-border: #00ffff;
+    --digit-color: #00ffff;
+    --digit-glow: #00ffffaa;
+    --btn-sec-bg: #00ffff;
+    --btn-sec-text: #090014;
+    --select-bg: #1a0028;
+    --select-border: #ff0055;
+  }
+
+  /* Theme: Retro Wood */
+  [data-theme="retro"] {
+    color-scheme: dark;
+    --bg: #1f1915;
+    --bg-gradient: radial-gradient(ellipse at top, #3a2d24 0%, #1f1915 80%);
+    --panel: rgba(43, 33, 26, 0.95);
+    --panel-border: #6e5239;
+    --text: #f3e5ab;
+    --muted: #b39b82;
+    --accent: #d97724;
+    --accent-text: #ffffff;
+    --digit-bg: linear-gradient(145deg, #3d2e22, #1d140e);
+    --digit-border: #8c6847;
+    --digit-color: #ffcc66;
+    --digit-glow: #ffcc6666;
+    --btn-sec-bg: #574130;
+    --btn-sec-text: #f3e5ab;
+    --select-bg: #271d17;
+    --select-border: #8c6847;
+  }
+
+  * { box-sizing: border-box; transition: background 0.3s, color 0.3s, border-color 0.3s; }
+  body {
+    margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 20px;
+    background: var(--bg-gradient); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .app {
+    width: min(100%, 650px); text-align: center; background: var(--panel);
+    border: 1px solid var(--panel-border); border-radius: 26px; padding: clamp(22px, 5vw, 42px);
+    box-shadow: 0 24px 70px rgba(0,0,0,0.5);
+  }
+  h1 { margin: 0 0 8px; font-size: clamp(25px, 5vw, 36px); }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .display { display: flex; justify-content: center; align-items: center; gap: clamp(6px, 2vw, 16px); margin: 20px 0 10px; }
+  .digit-group { display: flex; gap: 5px; }
+  .digit {
+    width: clamp(55px, 13vw, 105px); height: clamp(78px, 18vw, 132px); display: grid; place-items: center;
+    background: var(--digit-bg); border: 1px solid var(--digit-border); border-radius: 13px;
+    font: 800 clamp(43px, 11vw, 78px)/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    color: var(--digit-color); text-shadow: 0 0 18px var(--digit-glow);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 20px rgba(0,0,0,0.2);
+    font-variant-numeric: tabular-nums; position: relative; overflow: hidden;
+  }
+  .digit::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px solid rgba(255,255,255,0.1); }
+  .separator { font: 700 clamp(38px, 8vw, 62px)/1 monospace; color: var(--accent); padding-bottom: 5px; }
+  .units { display: flex; justify-content: center; gap: clamp(35px, 12vw, 95px); color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+  
+  .settings { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 12px; margin: 20px 0; }
+  .setting-item { display: flex; align-items: center; gap: 6px; }
+  label { color: var(--text); font-weight: 600; font-size: 14px; }
+  select {
+    color: var(--text); background: var(--select-bg); border: 1px solid var(--select-border);
+    border-radius: 10px; padding: 10px 12px; font: inherit; min-width: 110px; cursor: pointer;
+  }
+  
+  .buttons { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+  button { border: 0; border-radius: 12px; padding: 13px 24px; font: 700 16px system-ui; cursor: pointer; min-width: 112px; transition: transform .12s, filter .12s; }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  .start { background: var(--accent); color: var(--accent-text); }
+  .secondary { background: var(--btn-sec-bg); color: var(--btn-sec-text); }
+  .status { min-height: 26px; color: var(--muted); margin-top: 22px; }
+  .status.urgent { color: #ffbd69; font-weight: 700; }
+  .status.done { color: #ff8585; font-weight: 800; }
+  .hint { color: var(--muted); opacity: 0.8; font-size: 12px; line-height: 1.6; margin: 22px auto 0; max-width: 480px; }
+  .urgent .digit { color: #ffd08b; text-shadow: 0 0 20px #ff9d3d99; }
+
+  /* FULLSCREEN / LARGE DISPLAY STYLES */
+  :fullscreen body, :-webkit-full-screen body { padding: 0; }
+  :fullscreen .app, :-webkit-full-screen .app, .app.fullscreen-active {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+    border: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2vh 4vw;
+  }
+
+  .app.fullscreen-active h1, .app.fullscreen-active .sub, .app.fullscreen-active .hint {
+    display: none;
+  }
+
+  .app.fullscreen-active .display {
+    margin: auto 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .app.fullscreen-active .digit {
+    width: clamp(80px, 20vw, 220px);
+    height: clamp(110px, 28vw, 300px);
+    font-size: clamp(65px, 18vw, 200px);
+    border-radius: 20px;
+  }
+
+  .app.fullscreen-active .separator {
+    font-size: clamp(55px, 15vw, 160px);
+  }
+
+  .app.fullscreen-active .units {
+    gap: clamp(60px, 20vw, 240px);
+    font-size: clamp(14px, 2vw, 22px);
+    margin-bottom: 20px;
+  }
+
+  /* LANDSCAPE MODE RESPONSIVE (Dọc / Ngang tối ưu) */
+  @media (orientation: landscape) and (max-height: 600px) {
+    .app {
+      padding: 12px 20px;
+    }
+    h1, .sub, .hint {
+      display: none;
+    }
+    .display {
+      margin: 5px 0;
+    }
+    .digit {
+      width: clamp(50px, 14vh, 120px);
+      height: clamp(70px, 20vh, 160px);
+      font-size: clamp(40px, 13vh, 110px);
+    }
+    .separator {
+      font-size: clamp(35px, 10vh, 80px);
+    }
+    .units {
+      margin-bottom: 10px;
+      gap: clamp(40px, 16vh, 120px);
+    }
+    .settings {
+      margin: 8px 0;
+      gap: 10px;
+    }
+    select {
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    .buttons {
+      margin-top: 10px;
+      gap: 8px;
+    }
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      min-width: 90px;
+    }
+    .status {
+      margin-top: 8px;
+      min-height: 18px;
+      font-size: 13px;
+    }
+  }
+
+  /* FULLSCREEN LANDSCAPE SPECIFIC */
+  @media (orientation: landscape) {
+    .app.fullscreen-active .digit {
+      width: clamp(90px, 18vh, 260px);
+      height: clamp(120px, 26vh, 360px);
+      font-size: clamp(70px, 16vh, 240px);
+    }
+    .app.fullscreen-active .separator {
+      font-size: clamp(60px, 12vh, 180px);
+    }
+    .app.fullscreen-active .units {
+      gap: clamp(80px, 22vh, 300px);
+    }
+  }
+
+  @media(max-width: 480px) { .settings { flex-direction: column; gap: 10px; } }
+  @media(max-width: 380px) { .app { padding: 18px 12px; } .digit { border-radius: 9px; } .display { gap: 5px; } }
+</style>
+</head>
+<body>
+<main class="app" id="app">
+  <h1>Đồng hồ đếm ngược</h1>
+  <p class="sub">Đếm từng giây bằng âm thanh</p>
+
+  <div class="display" aria-live="off" aria-label="Thời gian còn lại">
+    <div class="digit-group"><span class="digit" id="m1">3</span><span class="digit" id="m2">0</span></div>
+    <span class="separator">:</span>
+    <div class="digit-group"><span class="digit" id="s1">0</span><span class="digit" id="s2">0</span></div>
+  </div>
+  <div class="units"><span>PHÚT</span><span>GIÂY</span></div>
+
+  <div class="settings">
+    <div class="setting-item">
+      <label for="duration">Thời lượng:</label>
+      <select id="duration">
+        <option value="60">1 phút</option>
+        <option value="180">3 phút</option>
+        <option value="300">5 phút</option>
+        <option value="600">10 phút</option>
+        <option value="900">15 phút</option>
+        <option value="1200">20 phút</option>
+        <option value="1500">25 phút</option>
+        <option value="1800" selected>30 phút</option>
+        <option value="2700">45 phút</option>
+        <option value="3600">60 phút</option>
+      </select>
+    </div>
+
+    <div class="setting-item">
+      <label for="themeSelect">Theme:</label>
+      <select id="themeSelect">
+        <option value="dark" selected>Bóng đêm</option>
+        <option value="light">Sáng tối giản</option>
+        <option value="cyberpunk">Cyberpunk</option>
+        <option value="retro">Cổ điển</option>
+      </select>
+    </div>
+
+    <div class="setting-item">
+      <label for="soundSelect">Tiếng tít:</label>
+      <select id="soundSelect">
+        <option value="default" selected>Mặc định</option>
+        <option value="soft">Nhẹ nhàng</option>
+        <option value="wood">Gõ gỗ</option>
+        <option value="mute">Mute (Tắt)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button class="start" id="start">▶ Bắt đầu</button>
+    <button class="secondary" id="pause" disabled>Ⅱ Tạm dừng</button>
+    <button class="secondary" id="reset">↺ Đặt lại</button>
+    <button class="secondary" id="fullscreen">⛶ Phóng to</button>
+  </div>
+  <div class="status" id="status">Chọn thời lượng rồi nhấn Bắt đầu.</div>
+  <p class="hint">Khi chạy: phát tiếng “tích” mỗi giây. 30 giây cuối: tiếng tích nhanh hơn. Hết giờ: phát chuông báo. Hãy bật âm lượng thiết bị; âm thanh bắt đầu sau khi bạn nhấn Bắt đầu.</p>
+</main>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const app = $('app'), duration = $('duration');
+  const themeSelect = $('themeSelect'), soundSelect = $('soundSelect');
+  const digits = [$('m1'), $('m2'), $('s1'), $('s2')];
+  const status = $('status'), startBtn = $('start'), pauseBtn = $('pause'), fsBtn = $('fullscreen');
+  let audioCtx = null, running = false, paused = false, endAt = 0, remaining = 1800;
+  let ticker = null, lastWholeSecond = null, lastFastTick = 0;
+
+  // Fullscreen Handler
+  function toggleFullScreen() {
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      if (app.requestFullscreen) {
+        app.requestFullscreen().catch(() => {});
+      } else if (app.webkitRequestFullscreen) {
+        app.webkitRequestFullscreen();
+      }
+      app.classList.add('fullscreen-active');
+      fsBtn.textContent = '🗗 Thu nhỏ';
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(() => {});
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+      app.classList.remove('fullscreen-active');
+      fsBtn.textContent = '⛶ Phóng to';
+    }
+  }
+
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+      app.classList.remove('fullscreen-active');
+      fsBtn.textContent = '⛶ Phóng to';
+    }
+  });
+
+  fsBtn.addEventListener('click', toggleFullScreen);
+
+  // Đổi Theme
+  themeSelect.addEventListener('change', (e) => {
+    document.documentElement.setAttribute('data-theme', e.target.value);
+  });
+
+  function show(seconds) {
+    seconds = Math.max(0, Math.ceil(seconds));
+    const mm = String(Math.floor(seconds / 60)).padStart(2,'0');
+    const ss = String(seconds % 60).padStart(2,'0');
+    [mm[0],mm[1],ss[0],ss[1]].forEach((v,i) => digits[i].textContent = v);
+  }
+
+  function audioReady() {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) { status.textContent = 'Trình duyệt không hỗ trợ âm thanh Web Audio.'; return false; }
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return true;
+  }
+
+  function tone(freq=1250, duration=.045, volume=.055, type='square') {
+    if (!audioCtx) return;
+    const now = audioCtx.currentTime, osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(volume, now); gain.gain.exponentialRampToValueAtTime(.001, now+duration);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(now); osc.stop(now+duration);
+  }
+
+  function tick() {
+    const soundMode = soundSelect.value;
+    if (soundMode === 'mute') return;
+
+    if (soundMode === 'soft') {
+      tone(800, .03, .04, 'sine');
+    } else if (soundMode === 'wood') {
+      tone(450, .025, .08, 'triangle');
+    } else {
+      tone(1450, .035, .035, 'square');
+    }
+  }
+
+  function alarm() {
+    if (!audioCtx) return;
+    [0, .22, .44, .9, 1.12, 1.34].forEach((t,i) => {
+      const now = audioCtx.currentTime + t;
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type='sine'; osc.frequency.value = i%3===0 ? 880 : 1175;
+      gain.gain.setValueAtTime(.001,now); gain.gain.linearRampToValueAtTime(.18,now+.025);
+      gain.gain.setValueAtTime(.18,now+.13); gain.gain.exponentialRampToValueAtTime(.001,now+.32);
+      osc.connect(gain); gain.connect(audioCtx.destination); osc.start(now); osc.stop(now+.34);
+    });
+  }
+
+  function finish() {
+    clearInterval(ticker); ticker=null; running=false; paused=false; remaining=0;
+    show(0); app.classList.remove('urgent'); app.classList.add('done');
+    status.textContent='⏰ HẾT GIỜ!'; startBtn.disabled=false; pauseBtn.disabled=true;
+    pauseBtn.textContent='Ⅱ Tạm dừng'; alarm();
+  }
+
+  function update() {
+    const left = Math.max(0, (endAt-Date.now())/1000);
+    remaining=left; show(left);
+    const whole=Math.ceil(left);
+    if (left <= 0) { finish(); return; }
+    app.classList.toggle('urgent', left <= 30);
+    if (left <= 30) {
+      status.textContent='⚡ 30 giây cuối — tích tắc nhanh!';
+      const elapsed = 30-left;
+      const fastIndex = Math.floor(elapsed*2);
+      if (fastIndex !== lastFastTick) { lastFastTick=fastIndex; tick(); }
+    } else {
+      status.textContent='Đang đếm ngược…';
+      if (whole !== lastWholeSecond) { lastWholeSecond=whole; tick(); }
+    }
+  }
+
+  function start() {
+    if (running) return;
+    if (!audioReady()) return;
+    app.classList.remove('done');
+    if (!paused) remaining=Number(duration.value);
+    if (remaining<=0) remaining=Number(duration.value);
+    endAt=Date.now()+remaining*1000; running=true; paused=false;
+    lastWholeSecond=null; lastFastTick=-1;
+    startBtn.disabled=true; pauseBtn.disabled=false; pauseBtn.textContent='Ⅱ Tạm dừng';
+    update(); ticker=setInterval(update,50);
+  }
+
+  function pause() {
+    if (!running) return;
+    remaining=Math.max(0,(endAt-Date.now())/1000);
+    clearInterval(ticker); ticker=null; running=false; paused=true;
+    show(remaining); startBtn.disabled=false; pauseBtn.disabled=true;
+    status.textContent='Đã tạm dừng. Nhấn Bắt đầu để tiếp tục.';
+  }
+
+  function reset() {
+    clearInterval(ticker); ticker=null; running=false; paused=false;
+    remaining=Number(duration.value); show(remaining); app.classList.remove('urgent','done');
+    status.textContent='Đã đặt lại. Chọn thời lượng rồi nhấn Bắt đầu.';
+    startBtn.disabled=false; pauseBtn.disabled=true; pauseBtn.textContent='Ⅱ Tạm dừng';
+  }
+
+  startBtn.addEventListener('click',start);
+  pauseBtn.addEventListener('click',pause);
+  $('reset').addEventListener('click',reset);
+  duration.addEventListener('change', () => { if(!running) reset(); });
+  show(remaining);
+})();
+</script>
+</body>
+</html>
